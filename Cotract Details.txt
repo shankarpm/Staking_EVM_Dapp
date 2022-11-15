@@ -1,0 +1,112 @@
+Contract Details:
+
+Minumum conditions to work
+- set PAW Token at the time of contract deployment
+- transfer some tokens to deployed contract so that it can give staking reward.
+
+All the perecntage rate like stakingFees, unstakingFees, rewardRate are like
+1 = 0.1 %
+10 = 1 %
+50 = 5 %
+100 = 10 %
+
+    /**************************************************/
+    /******************* Variables ********************/
+    /**************************************************/ 
+    // the reward token
+    ERC20 PAWToken;
+
+    // the staking token
+    ERC20 LPToken;
+
+    // the reward rate in percentage
+    uint256 public rewardRate; 
+
+    // the reward rate duration  
+    // so the final reward rate will be re (rewardRate/rewardRateDuration)
+    uint256 public rewardRateDuration; 
+
+    
+    //percetage fee charged on staking amount
+    uint256 public stakeFee;
+
+    //percetage fee charged on unstaking amount
+    uint256 public unstakeFee;
+
+    // Total stake amount
+    uint256 public totalStakedAmount;
+    
+    struct StakeInfo {          
+        uint256 amount; 
+        uint256 timeOfLastUpdate;
+        uint256 unclaimedRewards;       
+    }
+    
+    mapping(address => StakeInfo) public stakeInfos;
+
+
+    /**************************************************/
+    /******************** Events **********************/
+    /**************************************************/    
+event Staked(address indexed from, uint256 amount);
+- event triggered when user(from) stake amount tokens.
+
+event Unstake(address indexed from, uint256 amount);
+- event triggered when user(from) unstake amount tokens.
+
+event Claim(address indexed from, uint256 amount);
+- event triggered when user(from) claim amount of staking reward.
+
+constructor(ERC20 _tokenAddress)
+- required the PAW token address (the address of staking token) 
+
+    /**************************************************/
+    /****************** Functions *********************/
+    /**************************************************/    
+function getMyClaimRewardTillNow() return (uint256)
+- return amount which user can claim as reward
+    
+function setRewardRate(uint256 _rewardRate)
+- onlyOwner can call this functions and it set the reward rate in percentage
+e.g. if _rewardRate is 1 then reward will be 0.1% of staking amount
+e.g. if _rewardRate is 10 then reward will be 1% of staking amount
+e.g. if _rewardRate is 100 then reward will be 10% of staking amount
+
+function setRewardRateDuration(uint256 _rewardRateDuration)
+- onlyOwner can call this functions and it set the reward rate duration for rewardRate.
+
+function setStakeFee(uint256 _stakeFee) 
+- onlyOwner can call this functions and it set the fees in portion to stake token
+e.g. if _stakeFee is 1 then it will take 0.1% of staking amount
+e.g. if _stakeFee is 10 then it will take 1% of staking amount
+e.g. if _stakeFee is 100 then it will take 10% of staking amount
+
+
+function setUnstakeFee(uint256 _unstakeFee)
+- onlyOwner can call this functions and it set the fees in portion to unstake token
+e.g. if _unstakeFee is 1 then it will take 0.1% of unstaking amount
+e.g. if _unstakeFee is 10 then it will take 1% of unstaking amount
+e.g. if _unstakeFee is 100 then it will take 10% of unstaking amount
+
+
+function transferToken(address to,uint256 amount)
+- onlyOwner can call this functions and it transfer amount token from this contract to parameter address
+
+
+function pause() 
+- onlyOwner can call this functions and it pause (stop execution) the contract functions calling
+
+function unpause()
+- onlyOwner can call this functions and it unpause (allow execution) the contract functions calling
+
+function stakeToken(uint256 _stakeAmount)
+- to transfer _stakeAmount tokens to contract for staking
+
+function unstakeToken(uint256 _stakeAmount) return (bool- successful token transfer)
+- to transfer _stakeAmount tokens for user who is calling it
+
+function claimReward() return (bool- successful token transfer)
+- to transfer all claim rewards tokens for user who is calling it
+    
+function unstakeAllTokenAndClaimReward() return (bool- successful token transfer)
+- for transfer unstaking all tokens and claiming all rewarding in one call.
