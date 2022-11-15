@@ -3,8 +3,7 @@ import React, { useEffect, useState, useContext } from "react";
 import { Button, Form, Container, Row, Col, Tabs, Tab } from "react-bootstrap";
 import { toast } from 'react-toastify'; //toster
 import { stakingAddress, stakingABI } from '../components/contracts/StakingContractData';
-import { rewardTokenAddress, rewardTokenABI } from '../components/contracts/RewardsTokenContractData';
-import { lpTokenAddress, lpTokenABI } from '../components/contracts/LPTokenContractData';
+import { tokenAddress, tokenABI } from '../components/contracts/TokenContractData';
 
 import { LoginContext } from './LoginContext';
 
@@ -43,7 +42,7 @@ function Home(props) {
 
   async function connect() {
     let web3;
-    let StakingContract, RewardTokenContract, LPTokenContract;
+    let StakingContract, TokenContract;
     //connect to web3
     if (typeof window !== 'undefined' && typeof window.web3 !== 'undefined') {
       //we are in the browser and metamask is running
@@ -84,8 +83,7 @@ function Home(props) {
       // console.log(accounts[0]);
 
       StakingContract = new web3.eth.Contract(stakingABI, stakingAddress);
-      RewardTokenContract = new web3.eth.Contract(rewardTokenABI, rewardTokenAddress);
-      LPTokenContract = new web3.eth.Contract(lpTokenABI, lpTokenAddress);
+      TokenContract = new web3.eth.Contract(tokenABI, tokenAddress);
       setLoginData({
         walletAddress: accounts[0],
         isConnected: true,
@@ -93,10 +91,9 @@ function Home(props) {
         web3: web3,
         role: null,
         StakingContract: StakingContract,
-        RewardTokenContract: RewardTokenContract,
-        LPTokenContract: LPTokenContract
+        TokenContract: TokenContract
       });
-       console.log(accounts[0], web3, StakingContract, RewardTokenContract, LPTokenContract);
+      // console.log(accounts[0], web3, StakingContract, TokenContract);
     } else {
       //on the browser or user is not running metamask
       console.error("Metamask wallet not found! Please make sure wallet is installed and running!");
@@ -106,7 +103,10 @@ function Home(props) {
   const getAllContractVariables = async () => {
     props.setLoading(true);
     try {
-      var result = await loginData.StakingContract.methods.owner().call({ from: loginData.walletAddress });
+      var result = await loginData.StakingContract.methods.minmumStakingTime().call({ from: loginData.walletAddress });
+      console.log("minmumStakingTime : "+result);
+
+      result = await loginData.StakingContract.methods.owner().call({ from: loginData.walletAddress });
       console.log("owner : "+result);
 
       result = await loginData.StakingContract.methods.paused().call({ from: loginData.walletAddress });
@@ -138,7 +138,7 @@ function Home(props) {
     props.setLoading(true);
     try {
       var result = await loginData.StakingContract.methods.totalStakedAmount().call({ from: loginData.walletAddress });
-      console.log("getTotalStakeAmount :" + result);
+      console.log(result);
       setTotalStakeAmount(result);
     } catch (err) {
       console.log(err);
@@ -164,7 +164,7 @@ function Home(props) {
     props.setLoading(true);
 
     try {
-      var result = await loginData.RewardTokenContract.methods.balanceOf(stakingAddress).call({ from: loginData.walletAddress });
+      var result = await loginData.TokenContract.methods.balanceOf(stakingAddress).call({ from: loginData.walletAddress });
       console.log(result);
       setStakContractBalance(result);
     } catch (err) {
@@ -190,13 +190,13 @@ function Home(props) {
   }
 
   const handleSubmitStak = async (event) => {
-    props.setLoading(true);
     event.preventDefault();
+    props.setLoading(true);
     const amount = (convertEthersToWei(event.target.stakingAmount.value)).toString();//convert it with decimal value
 
     try {
-      if (parseInt(amount) > parseInt(await loginData.LPTokenContract.methods.allowance(loginData.walletAddress, stakingAddress).call())) {
-        let allowanceHash = await loginData.LPTokenContract.methods.approve(stakingAddress, amount).send({ from: loginData.walletAddress });
+      if (parseInt(amount) > parseInt(await loginData.TokenContract.methods.allowance(loginData.walletAddress, stakingAddress).call())) {
+        let allowanceHash = await loginData.TokenContract.methods.approve(stakingAddress, amount).send({ from: loginData.walletAddress });
         console.log("approve transaction Hash " + JSON.stringify(allowanceHash));
       }
       var result = await loginData.StakingContract.methods.stakeToken(amount).send({ from: loginData.walletAddress });
@@ -278,31 +278,31 @@ function Home(props) {
 
             <Row>
               <Col md={6}>
-                <span onClick={() => getTotalStakeAmount()}>Total Stake Amount (LP token):  {convertWeiToEthers(totalStakeAmount)} <button >refresh</button></span>
+                <span onClick={() => getTotalStakeAmount()}>Total Stake Amount {convertWeiToEthers(totalStakeAmount)}. <button >refresh</button></span>
               </Col>
               <Col md={6}>
-                <span onClick={() => getStakeContractBalance()}> Contract Reward (PAW token) Balance:  {convertWeiToEthers(stakContractBalance)} <button >refresh</button></span>
+                <span onClick={() => getStakeContractBalance()}> Stak Contract Balance {convertWeiToEthers(stakContractBalance)} <button >refresh</button></span>
               </Col>
             </Row>
             <br />
             <Row>
               <Col md={6}>
-                <span onClick={() => getStakeInfoData()}>You have {convertWeiToEthers(stakInfo?.amount)} on stake <button >refresh</button></span>
+                <span onClick={() => getStakeInfoData()}>You have {convertWeiToEthers(stakInfo?.amount)} on stake. <button >refresh</button></span>
               </Col>
               <Col md={6}>
-                <span onClick={() => getStakeInfoData()}>Claim Reward (PAW Token):  {convertWeiToEthers(stakInfo?.unclaimedRewards)} <button >refresh</button></span>
+                <span onClick={() => getStakeInfoData()}>Claim Reward {convertWeiToEthers(stakInfo?.unclaimedRewards)}. <button >refresh</button></span>
               </Col>
             </Row>
 
             <Row>
               <Form onSubmit={handleSubmitStak}>
                 <Form.Group className="mb-3 input-form" controlId="formStakingAmount">
-                  <Form.Label>Stake LP Token<span className="color-red">*</span></Form.Label>
+                  <Form.Label>Stak<span className="color-red">*</span></Form.Label>
                   <Form.Control className="input-design" type="number" id="stakingAmount" required />
                 </Form.Group>
 
                 <div className='btn-row'>
-                  <Button variant="primary" type="submit" disabled={props.loading}> Stake </Button>
+                  <Button variant="primary" type="submit" disabled={props.loading}> Stak </Button>
                 </div>
               </Form>
             </Row>
@@ -310,27 +310,27 @@ function Home(props) {
             <Row>
               <Form onSubmit={handleSubmitUnstak}>
                 <Form.Group className="mb-3 input-form" controlId="formUnstakingAmount">
-                  <Form.Label>Unstake LP Token<span className="color-red">*</span></Form.Label>
+                  <Form.Label>Unstak<span className="color-red">*</span></Form.Label>
                   <Form.Control className="input-design" type="number" id="unstakingAmount" required />
                 </Form.Group>
 
                 <div className='btn-row'>
-                  <Button variant="primary" type="submit" disabled={props.loading}> Unstake </Button>
+                  <Button variant="primary" type="submit" disabled={props.loading}> Unstak </Button>
                 </div>
 
               </Form>
             </Row>
             <br />
             <Row>
-              <span onClick={() => getClaimableRewardTillNow()}> Claimable reward(PAW token) amount till now:  {convertWeiToEthers(claimableRewardTillNow)} <button >refresh</button></span>
+              <span onClick={() => getClaimableRewardTillNow()}> Claimable reward amount till now {convertWeiToEthers(claimableRewardTillNow)} <button >refresh</button></span>
             </Row>
             <br /><br />
             <Row>
-              <Button onClick={() => claimRewards()}> Claim Reward (PAW token) </Button>
+              <Button onClick={() => claimRewards()}> Claim Reward </Button>
             </Row>
             <br /><br />
             <Row>
-              <Button onClick={() => unstakeAndclaimRewards()}> Unstake All (LP token) and Claim Reward (PAW token) </Button>
+              <Button onClick={() => unstakeAndclaimRewards()}> Unstake All and Claim Reward </Button>
             </Row>
 
           </div>

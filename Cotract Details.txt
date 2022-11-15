@@ -13,11 +13,8 @@ All the perecntage rate like stakingFees, unstakingFees, rewardRate are like
     /**************************************************/
     /******************* Variables ********************/
     /**************************************************/ 
-    // the reward token
+    // the staking and reward token
     ERC20 PAWToken;
-
-    // the staking token
-    ERC20 LPToken;
 
     // the reward rate in percentage
     uint256 public rewardRate; 

@@ -10,8 +10,7 @@ export const LoginProvider= props =>{
         isConnected:false,
         web3:null,
         StakingContract:null,
-        rewardTokenContract:null,
-        LPTokenContract:null
+        TokenContract:null
     })
     
 
